@@ -1,0 +1,23 @@
+language: generic
+sudo: required
+services:
+    - docker
+
+before_install:
+    - docker build -t lykaion/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+    - docker run -e CI=true lykaion/react-test npm test -- --coverage
+
+after_success:
+    - docker build -t lykaion/multi-client ./client
+    - docker build -t lykaion/multi-nginx ./nginx
+    - docker build -t lykaion/multi-server ./server
+    - docker build -t lykaion/multi-worker ./worker
+    # Log in to the Docker CLI
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+    # Take images and push them to Docker Hub
+    - docker push lykaion/multi-client
+    - docker push lykaion/multi-nginx 
+    - docker push lykaion/multi-server
+    - docker push lykaion/multi-worker
